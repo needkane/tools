@@ -1,4 +1,4 @@
-package gmssltest
+package tests
 
 import (
 	"crypto/ecdsa"
@@ -14,8 +14,12 @@ import (
 	"github.com/tjfoc/gmsm/sm2"
 )
 
-//use global variable for fix benchmark error
-//(elliptic curve routines:eckey_param2type:missing parameters:crypto/ec/ec_ameth.c:84)
+/*
+Dependent library files can be obtained from "gmssl" project
+
+Use global variable for fix benchmark error
+(elliptic curve routines:eckey_param2type:missing parameters:crypto/ec/ec_ameth.c:84)
+*/
 var sm2sk *gmssl.PrivateKey
 
 func init() {
