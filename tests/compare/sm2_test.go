@@ -2,22 +2,31 @@ package main
 
 import (
 	"encoding/pem"
-	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/guanzhi/GmSSL/go/gmssl"
 	"github.com/stretchr/testify/assert"
 	"github.com/tjfoc/gmsm/sm2"
 )
 
 func TestSM2Result(t *testing.T) {
-	//secp256k1
+	//secp256k1 btc
 	priv0, err := btcec.NewPrivateKey(btcec.S256())
 	assert.Nil(t, err)
 	bytez := priv0.Serialize()
 	priv1, _ := btcec.PrivKeyFromBytes(btcec.S256(), bytez)
 	assert.Equal(t, priv0, priv1)
+
+	//secp256k1 ethereum
+	priv_eth0, err := crypto.GenerateKey()
+	assert.Nil(t, err)
+	bytez = crypto.FromECDSA(priv_eth0)
+	priv_eth1, err := crypto.ToECDSA(bytez)
+	assert.Nil(t, err)
+	assert.Equal(t, priv_eth0, priv_eth1)
 
 	//tjfoc
 	priv_tj0, err := sm2.GenerateKey()
@@ -27,6 +36,9 @@ func TestSM2Result(t *testing.T) {
 	priv_tj1, err := sm2.ParsePKCS8UnecryptedPrivateKey(bytez)
 	assert.Nil(t, err)
 	assert.Equal(t, priv_tj0, priv_tj1)
+	priv_tj3, err := sm2.ParseSm2PrivateKeyWithoutAsn(priv_tj1.D.Bytes())
+	assert.Nil(t, err)
+	assert.Equal(t, priv_tj0, priv_tj3)
 
 	block := &pem.Block{
 		Type:  "PRIVATE KEY",
@@ -34,7 +46,6 @@ func TestSM2Result(t *testing.T) {
 	}
 	pemBytes := pem.EncodeToMemory(block)
 	priv_tj2, err := sm2.ReadPrivateKeyFromMem(pemBytes, nil)
-	fmt.Println(len(pemBytes))
 	assert.Equal(t, priv_tj0, priv_tj2)
 
 	//gmssl
@@ -46,21 +57,26 @@ func TestSM2Result(t *testing.T) {
 	assert.Nil(t, err)
 	sm2skpem, err := sm2sk.GetPEM("SMS4", "pass")
 	assert.Nil(t, err)
-	priv_ssl0, err := gmssl.NewPrivateKeyFromPEM(sm2skpem, "pass")
+	privBase64 := strings.Split(sm2skpem, "-----")[2]
+	//blk, rest := pem.Decode([]byte(sm2skpem))
+	var str string
+	str += "-----BEGIN ENCRYPTED PRIVATE KEY-----"
+	str += privBase64
+	str += "-----END ENCRYPTED PRIVATE KEY-----"
+	//	fmt.Println("=====", sm2skpem, "========", str)
+	priv_ssl0, err := gmssl.NewPrivateKeyFromPEM(str, "pass")
 	assert.Nil(t, err)
 	assert.Equal(t, sm2sk, priv_ssl0)
 	var signMethodName = "sm2sign"
-	var msg = []byte("needkane2")
+	var msg = []byte("needkane")
 	sign, err := sm2sk.Sign(signMethodName, msg, nil)
 	assert.Nil(t, err)
 	sm2pkpem, err := priv_ssl0.GetPublicKeyPEM()
 	assert.Nil(t, err)
 	sm2pk, err := gmssl.NewPublicKeyFromPEM(sm2pkpem)
 	assert.Nil(t, err)
-	text, err := sm2pk.GetText()
-	assert.Nil(t, err)
-	fmt.Println(len(sm2pkpem), len(text), "=====", len(sm2skpem), "========")
-
+	//text, err := sm2pk.GetText()
+	//assert.Nil(t, err)
 	err = sm2pk.Verify(signMethodName, msg, sign, nil)
 	assert.Nil(t, err)
 }
