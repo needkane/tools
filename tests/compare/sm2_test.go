@@ -1,10 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/pem"
 	"strings"
 	"testing"
 
+	zzsm2 "github.com/ZZMarquis/gm/sm2"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/guanzhi/GmSSL/go/gmssl"
@@ -79,4 +81,11 @@ func TestSM2Result(t *testing.T) {
 	//assert.Nil(t, err)
 	err = sm2pk.Verify(signMethodName, msg, sign, nil)
 	assert.Nil(t, err)
+
+	//ZZMarquis
+	priv_zz0, _, err := zzsm2.GenerateKey(rand.Reader)
+	assert.Nil(t, err)
+	priv_zz1, err := zzsm2.RawBytesToPrivateKey(priv_zz0.D.Bytes())
+	assert.Nil(t, err)
+	assert.Equal(t, priv_zz0, priv_zz1)
 }
