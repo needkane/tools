@@ -2,11 +2,14 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"strings"
 	"testing"
 
 	zzsm2 "github.com/ZZMarquis/gm/sm2"
+	zzsm3 "github.com/ZZMarquis/gm/sm3"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/guanzhi/GmSSL/go/gmssl"
@@ -15,6 +18,8 @@ import (
 )
 
 func TestSM2Result(t *testing.T) {
+	var msg = []byte("needkane")
+
 	//secp256k1 btc
 	priv0, err := btcec.NewPrivateKey(btcec.S256())
 	assert.Nil(t, err)
@@ -49,6 +54,10 @@ func TestSM2Result(t *testing.T) {
 	pemBytes := pem.EncodeToMemory(block)
 	priv_tj2, err := sm2.ReadPrivateKeyFromMem(pemBytes, nil)
 	assert.Equal(t, priv_tj0, priv_tj2)
+	sign, err := priv_tj2.Sign(rand.Reader, msg, nil) // 签名
+	assert.Nil(t, err)
+	ok := priv_tj2.PublicKey.Verify(msg, sign) // 密钥验证
+	assert.Equal(t, ok, true)
 
 	//gmssl
 	sm2keygenargs := map[string]string{
@@ -70,8 +79,7 @@ func TestSM2Result(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, sm2sk, priv_ssl0)
 	var signMethodName = "sm2sign"
-	var msg = []byte("needkane")
-	sign, err := sm2sk.Sign(signMethodName, msg, nil)
+	sign, err = sm2sk.Sign(signMethodName, msg, nil)
 	assert.Nil(t, err)
 	sm2pkpem, err := priv_ssl0.GetPublicKeyPEM()
 	assert.Nil(t, err)
@@ -83,9 +91,27 @@ func TestSM2Result(t *testing.T) {
 	assert.Nil(t, err)
 
 	//ZZMarquis
-	priv_zz0, _, err := zzsm2.GenerateKey(rand.Reader)
+	priv_zz0, pub_zz0, err := zzsm2.GenerateKey(rand.Reader)
 	assert.Nil(t, err)
 	priv_zz1, err := zzsm2.RawBytesToPrivateKey(priv_zz0.D.Bytes())
 	assert.Nil(t, err)
 	assert.Equal(t, priv_zz0, priv_zz1)
+	sign, err = zzsm2.Sign(priv_zz1, nil, msg)
+	assert.Nil(t, err)
+	ok = zzsm2.Verify(pub_zz0, nil, msg, sign)
+	assert.Equal(t, ok, true)
+	fmt.Println(pub_zz0.GetRawBytes(), len(pub_zz0.GetRawBytes()))
+
+	privStr := "ae08dc67186f140235a36a06e55dc2ccabbc5365525825c382aa36e055de84cd"
+	bytez, err = hex.DecodeString(privStr)
+	assert.Nil(t, err)
+	priv_zz2, err := zzsm2.RawBytesToPrivateKey(bytez)
+	assert.Nil(t, err)
+
+	pub_zz2 := zzsm2.CaculatePubKey(priv_zz2)
+	d := zzsm3.New()
+	d.Write(pub_zz2.GetRawBytes()) //GetRawBytes == raw[1:]
+	hash := d.Sum(nil)
+	assert.Equal(t, "4a21554fcca7fdd8c183ecaab3a797c7dfce6de5", hex.EncodeToString(hash[12:]))
+
 }
