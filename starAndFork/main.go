@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli"
 )
 
@@ -61,6 +62,13 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+type Result struct {
+	Contract string `json"contract"`
+	Privkey  string `json:"privkey"`
+	Address  string `json:"address"`
+}
+
 func queryByGithubAPI(ctx *cli.Context) error {
 	if ctx.String("username") == "" {
 		return errors.New("Please specify a username by '-u [Your github username]'")
@@ -74,7 +82,7 @@ func queryByGithubAPI(ctx *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.Header.Set("Authorization", "bearer [Your github account token]")
+	req.Header.Set("Authorization", "bearer b1f9ad3f8e06456e677afbbd16b05e31389c9bfa")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -109,5 +117,37 @@ func queryByGithubAPI(ctx *cli.Context) error {
 			break
 		}
 	}
+	result, err := createAccount()
+	if err != nil {
+		return err
+	}
+	result.Contract = "0x6565b91fFCC126F7d704a1a21483009C320952BB"
+	bytez, err = json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(bytez))
 	return err
+}
+
+func createAccount() (result Result, err error) {
+	var (
+		privkeyBytes []byte
+		addrBytes    []byte
+	)
+
+	privkey, errG := crypto.GenerateKey()
+	if errG != nil {
+		err = errG
+		return
+	}
+
+	privkeyBytes = crypto.FromECDSA(privkey)
+
+	address := crypto.PubkeyToAddress(privkey.PublicKey)
+	addrBytes = address.Bytes()
+
+	result.Privkey = fmt.Sprintf("%x", privkeyBytes)
+	result.Address = fmt.Sprintf("%x", addrBytes)
+	return
 }
