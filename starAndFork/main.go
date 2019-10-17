@@ -82,7 +82,7 @@ func queryByGithubAPI(ctx *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.Header.Set("Authorization", "bearer b1f9ad3f8e06456e677afbbd16b05e31389c9bfa")
+	req.Header.Set("Authorization", "bearer [Your github account token]")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
