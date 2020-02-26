@@ -9,6 +9,7 @@ import (
 	"log"
 	"testing"
 
+	zzsm2 "github.com/ZZMarquis/gm/sm2"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/guanzhi/GmSSL/go/gmssl"
 	"github.com/tjfoc/gmsm/sm2"
@@ -26,6 +27,26 @@ func init() {
 	newSm2sk()
 }
 
+func BenchmarkZZMarquisSM2(t *testing.B) {
+	t.ReportAllocs()
+	msg := []byte("abcdefghijklmnopqrstuvwxyz_abcde")
+	priv, pub, err := zzsm2.GenerateKey(rand.Reader) // 生成密钥对
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		sign, err := zzsm2.Sign(priv, nil, msg) // 签名
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		ok := zzsm2.Verify(pub, nil, msg, sign) // 密钥验证
+		if ok != true {
+			fmt.Printf("Verify error\n")
+		}
+	}
+}
 func BenchmarkTjSM2(t *testing.B) {
 	t.ReportAllocs()
 	msg := []byte("abcdefghijklmnopqrstuvwxyz_abcde")
