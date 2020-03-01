@@ -14,8 +14,8 @@ import (
 )
 
 type HttpResult struct {
-	Result string `json:"result"`
-	Error  string `json:"error"`
+	Result interface{} `json:"result"`
+	Error  string      `json:"error"`
 }
 
 func ErrorResponse(w http.ResponseWriter, errCode int, err error) {
@@ -124,8 +124,7 @@ func CryptoAsymmetricHandler(w http.ResponseWriter, r *http.Request) {
 			result.Privkey = common.Bytes2Hex(crypto.FromECDSA(privkey))
 			result.Pubkey = common.Bytes2Hex(crypto.FromECDSAPub(&privkey.PublicKey))
 			result.Address = address.Hex()
-			bytez, _ := json.Marshal(result)
-			hr.Result = string(bytez)
+			hr.Result = result
 		} else if ab.Operation == "get_address" {
 			privBytes := common.Hex2Bytes(ab.Content)
 			privkey, err := crypto.ToECDSA(privBytes)
@@ -140,8 +139,7 @@ func CryptoAsymmetricHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			result.Privkey = ab.Content
 			result.Address = address.Hex()
-			bytez, _ := json.Marshal(result)
-			hr.Result = string(bytez)
+			hr.Result = result
 
 		}
 	default:
@@ -170,7 +168,7 @@ func CryptoHashHandler(w http.ResponseWriter, r *http.Request) {
 	case "md5":
 		m := md5.New()
 		m.Write([]byte(hb.Content))
-		hr.Result = string(hex.EncodeToString(m.Sum(nil)))
+		hr.Result = hex.EncodeToString(m.Sum(nil))
 	default:
 		err = fmt.Errorf("invalid crypto method: %s", hb.Method)
 		ErrorResponse(w, http.StatusBadRequest, err)

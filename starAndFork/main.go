@@ -9,15 +9,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/dappledger/AnnChain/eth/crypto"
 	"github.com/urfave/cli"
 )
 
 type QueryJson struct {
 	Query string `json:"query"`
 }
-type StartForkResult struct {
+type StarForkResult struct {
 	Data Data `json:"data"`
 }
 type Data struct {
@@ -86,14 +87,14 @@ func queryByGithubAPI(ctx *cli.Context) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error is (%v),please check your network to make sure you can connect to github api", err)
 	}
 	defer resp.Body.Close()
 	bytez, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	sfr := StartForkResult{}
+	sfr := StarForkResult{}
 	err = json.Unmarshal(bytez, &sfr)
 	if err != nil {
 		log.Fatal(err)
@@ -121,7 +122,7 @@ func queryByGithubAPI(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	result.Contract = "0x6565b91fFCC126F7d704a1a21483009C320952BB"
+	result.Contract = strings.ToLower("0x04D7A824b3301e67Ef34024E9dc79445E54D5aF7")
 	bytez, err = json.Marshal(result)
 	if err != nil {
 		return err
