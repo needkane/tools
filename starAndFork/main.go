@@ -58,7 +58,7 @@ type Node struct {
 }
 
 var (
-	bearToken    = "876aaf3d250742330fd3246d9e44b7f7002e0dcb"
+	bearToken    = "Your github account token"
 	pageCount    = 30
 	maxLastCount = 100
 	queryContent = fmt.Sprintf(`query { repository(owner:"dappledger", name:"AnnChain") { stargazers (last : %d){ totalCount edges {  node { url } } }  forks(last : %d) { totalCount edges { node { url  } } } } }`, maxLastCount, maxLastCount)
